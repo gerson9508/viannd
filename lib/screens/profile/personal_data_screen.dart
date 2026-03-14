@@ -13,6 +13,7 @@ class PersonalDataScreen extends StatefulWidget {
 class _PersonalDataScreenState extends State<PersonalDataScreen> {
   late TextEditingController _nameController;
   late TextEditingController _ageController;
+  late TextEditingController _kcalController;
   String _selectedGender = 'Mujer';
   bool _isSaving = false;
 
@@ -22,6 +23,7 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
     final user = context.read<AuthProvider>().user;
     _nameController = TextEditingController(text: user?.name ?? '');
     _ageController = TextEditingController(text: user?.age?.toString() ?? '');
+     _kcalController = TextEditingController(text: user?.dailyKcal?.toString() ?? '1800');/// 
     _selectedGender = user?.gender ?? 'Mujer';
     if (!['Mujer', 'Hombre', 'Otro'].contains(_selectedGender)) {
       _selectedGender = 'Mujer';
@@ -32,12 +34,14 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();
+    _kcalController.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     final name = _nameController.text.trim();
     final ageText = _ageController.text.trim();
+    final kcalText = _kcalController.text.trim();
 
     if (name.isEmpty) {
       _showSnack('El nombre no puede estar vacío', isError: true);
@@ -49,9 +53,16 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
       return;
     }
 
+    final kcal = int.tryParse(kcalText);
+    if (kcal == null || kcal < 500 || kcal > 10000) {
+      _showSnack('Ingresa un valor de kcal válido (500–10000)', isError: true);
+      return;
+    }
+
     setState(() => _isSaving = true);
     final auth = context.read<AuthProvider>();
-    final ok = await auth.updateUser(name, age, _selectedGender);
+    final ok = await auth.updateUser(name, age, _selectedGender,kcal);//,kcal
+    if (!mounted) return;
     setState(() => _isSaving = false);
 
     if (ok) {
@@ -127,7 +138,7 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                   // Avatar central
                   Center(
                     child: Consumer<AuthProvider>(
-                      builder: (_, auth, __) {
+                      builder: (_, auth, _) {
                         final initial = auth.user?.name.isNotEmpty == true
                             ? auth.user!.name[0].toUpperCase()
                             : 'U';
@@ -221,6 +232,17 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                               ),
                             );
                           }).toList(),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Kilocalorías diarias
+                        _fieldLabel('Kilocalorías diarias'),
+                        const SizedBox(height: 8),
+                        _inputField(
+                          controller: _kcalController,
+                          hint: 'Ej. 1800',
+                          icon: Icons.local_fire_department_outlined,
+                          keyboardType: TextInputType.number,
                         ),
                       ],
                     ),

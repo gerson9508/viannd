@@ -16,7 +16,7 @@ class RemindersScreen extends StatefulWidget {
 
 class _RemindersScreenState extends State<RemindersScreen> {
   final _reminderService = ReminderService();
-  final _notificationService = NotificationService(); 
+  final _notificationService = NotificationService();
   List<ReminderModel> _reminders = [];
   bool _isLoading = true;
 
@@ -47,38 +47,36 @@ class _RemindersScreenState extends State<RemindersScreen> {
   }
 
   Future<void> _loadReminders() async {
-  final auth = context.read<AuthProvider>();
-  if (auth.user == null || auth.token == null) return;
-  setState(() => _isLoading = true);
-  try {
-    final data = await _reminderService.getRemindersByUser(auth.user!.id, auth.token!);
-    setState(() {
-      _reminders = data.map((r) => ReminderModel.fromJson(r)).toList();
-    });
-  } catch (e) {
-    setState(() => _reminders = []);
+    final auth = context.read<AuthProvider>();
+    if (auth.user == null || auth.token == null) return;
+    setState(() => _isLoading = true);
+    try {
+      final data = await _reminderService.getRemindersByUser(auth.user!.id, auth.token!);
+      setState(() {
+        _reminders = data.map((r) => ReminderModel.fromJson(r)).toList();
+      });
+    } catch (e) {
+      setState(() => _reminders = []);
+    }
+
+    await _syncNotifications(_reminders);
+
+    setState(() => _isLoading = false);
   }
 
-  
-  await _syncNotifications(_reminders);
-
-  setState(() => _isLoading = false);
-}
-
-    
-    Future<void> _syncNotifications(List<ReminderModel> reminders) async {
-      for (final r in reminders) {
-        if (r.active && r.time.isNotEmpty && r.time != '00:00') {
-          await _notificationService.scheduleReminderNotification(
-            id: r.id,
-            mealType: r.mealType,
-            time: r.time,
-          );
-        } else {
-          await _notificationService.cancelReminderNotification(r.id);
-        }
+  Future<void> _syncNotifications(List<ReminderModel> reminders) async {
+    for (final r in reminders) {
+      if (r.active && r.time.isNotEmpty && r.time != '00:00') {
+        await _notificationService.scheduleReminderNotification(
+          id: r.id,
+          mealType: r.mealType,
+          time: r.time,
+        );
+      } else {
+        await _notificationService.cancelReminderNotification(r.id);
       }
     }
+  }
 
   Future<void> _toggleReminder(int id) async {
     final auth = context.read<AuthProvider>();
@@ -87,65 +85,63 @@ class _RemindersScreenState extends State<RemindersScreen> {
   }
 
   Future<void> _editReminderTime(ReminderModel reminder) async {
-    // Parsear la hora actual del recordatorio
-    TimeOfDay initialTime = const TimeOfDay(hour: 8, minute: 0);
-    if (reminder.time.isNotEmpty && reminder.time != '00:00') {
-      final parts = reminder.time.split(':');
-      if (parts.length == 2) {
-        final h = int.tryParse(parts[0]) ?? 8;
-        final m = int.tryParse(parts[1]) ?? 0;
-        initialTime = TimeOfDay(hour: h, minute: m);
-      }
-    }
-
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF4CAF50),
-              onPrimary: Colors.white,
-              onSurface: Colors.black87,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked == null || !mounted) return;
-
-    final timeStr =
-        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-    final auth = context.read<AuthProvider>();
-
-    // Eliminar y recrear con nueva hora (la API de toggle no acepta time,
-    // así que borramos y creamos de nuevo)
-    await _reminderService.deleteReminder(reminder.id, auth.token!);
-    await _reminderService.createReminder(
-      {
-        'userId': auth.user!.id,
-        'mealType': reminder.mealType,
-        'time': timeStr,
-        'active': reminder.active,
-      },
-      auth.token!,
-    );
-    await _loadReminders();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Alarma de ${_mealTypeNames[reminder.mealType]} actualizada a $timeStr'),
-          backgroundColor: const Color(0xFF4CAF50),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+  TimeOfDay initialTime = const TimeOfDay(hour: 8, minute: 0);
+  if (reminder.time.isNotEmpty && reminder.time != '00:00') {
+    final parts = reminder.time.split(':');
+    if (parts.length >= 2) { // ✅ acepta "14:00" Y "14:00:00"
+      final h = int.tryParse(parts[0]) ?? 8;
+      final m = int.tryParse(parts[1]) ?? 0;
+      initialTime = TimeOfDay(hour: h, minute: m);
     }
   }
+
+  final picked = await showTimePicker(
+    context: context,
+    initialTime: initialTime, // ✅ ahora sí llega con 14:00
+    builder: (context, child) {
+      return Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF4CAF50),
+            onPrimary: Colors.white,
+            onSurface: Colors.black87,
+          ),
+        ),
+        child: child!,
+      );
+    },
+  );
+
+  if (picked == null || !mounted) return;
+
+  final timeStr =
+      '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+  final auth = context.read<AuthProvider>();
+
+  await _reminderService.deleteReminder(reminder.id, auth.token!);
+  await _reminderService.createReminder(
+    {
+      'userId': auth.user!.id,
+      'mealType': reminder.mealType,
+      'time': timeStr,
+      'active': reminder.active,
+    },
+    auth.token!,
+  );
+  await _loadReminders();
+
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Alarma de ${_mealTypeNames[reminder.mealType]} actualizada a $timeStr'),
+        backgroundColor: const Color(0xFF4CAF50),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
 
   Future<void> _createDefaultReminders() async {
     final auth = context.read<AuthProvider>();
@@ -167,14 +163,19 @@ class _RemindersScreenState extends State<RemindersScreen> {
       backgroundColor: const Color(0xFF1A1A1A),
       body: Column(
         children: [
-          // Header oscuro
           Container(
             padding: const EdgeInsets.fromLTRB(24, 56, 24, 20),
             color: const Color(0xFF1A1A1A),
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () => context.go('/profile'),
+                  onTap: () {
+                    if (context.canPop()) {
+                      context.pop();          // regresa al stack anterior
+                    } else {
+                      context.go('/home');    // fallback si no hay stack
+                    }
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -199,7 +200,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
             ),
           ),
 
-          // Lista de recordatorios
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF4CAF50)))
@@ -236,8 +236,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                           final name = _mealTypeNames[r.mealType] ?? '';
                           final icon = _mealTypeIcons[r.mealType] ?? Icons.alarm;
                           final bgColor = _mealTypeColors[r.mealType] ?? Colors.grey[200]!;
-                          final iconColor =
-                              _mealTypeIconColors[r.mealType] ?? Colors.grey;
+                          final iconColor = _mealTypeIconColors[r.mealType] ?? Colors.grey;
                           final timeDisplay =
                               r.time.isEmpty || r.time == '00:00' ? 'Sin hora' : r.time;
 
@@ -251,7 +250,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                             ),
                             child: Row(
                               children: [
-                                // Ícono de tipo de comida
                                 Container(
                                   width: 46,
                                   height: 46,
@@ -262,7 +260,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                   child: Icon(icon, color: iconColor, size: 22),
                                 ),
                                 const SizedBox(width: 14),
-                                // Nombre y hora
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,11 +283,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                     ],
                                   ),
                                 ),
-                                // Switch activo/inactivo
                                 Switch(
                                   value: r.active,
                                   onChanged: (_) => _toggleReminder(r.id),
-                                  activeColor: const Color(0xFF4CAF50),
+                                  activeThumbColor: const Color(0xFF4CAF50),
                                   inactiveThumbColor: Colors.grey[600],
                                   inactiveTrackColor: Colors.grey[700],
                                 ),
@@ -301,15 +297,12 @@ class _RemindersScreenState extends State<RemindersScreen> {
                       ),
           ),
 
-          // Botón editar alarma — ahora funcional con picker
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _reminders.isEmpty
-                    ? null
-                    : () => _showEditAlarmSheet(),
+                onPressed: _reminders.isEmpty ? null : () => _showEditAlarmSheet(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4CAF50),
                   disabledBackgroundColor: Colors.grey[800],
@@ -339,6 +332,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
   void _showEditAlarmSheet() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // ✅ FIX 1: permite altura dinámica
       backgroundColor: const Color(0xFF2C2C2C),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -359,38 +353,51 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ..._reminders.map((r) {
-                final name = _mealTypeNames[r.mealType] ?? '';
-                final icon = _mealTypeIcons[r.mealType] ?? Icons.alarm;
-                final bgColor = _mealTypeColors[r.mealType] ?? Colors.grey[200]!;
-                final iconColor = _mealTypeIconColors[r.mealType] ?? Colors.grey;
-                final timeDisplay =
-                    r.time.isEmpty || r.time == '00:00' ? 'Sin hora' : r.time;
 
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: iconColor, size: 20),
+              // ✅ FIX 2 y 3: altura máxima + scroll para el CT40
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      ..._reminders.map((r) {
+                        final name = _mealTypeNames[r.mealType] ?? '';
+                        final icon = _mealTypeIcons[r.mealType] ?? Icons.alarm;
+                        final bgColor = _mealTypeColors[r.mealType] ?? Colors.grey[200]!;
+                        final iconColor = _mealTypeIconColors[r.mealType] ?? Colors.grey;
+                        final timeDisplay =
+                            r.time.isEmpty || r.time == '00:00' ? 'Sin hora' : r.time;
+
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(icon, color: iconColor, size: 20),
+                          ),
+                          title: Text(name,
+                              style: const TextStyle(
+                                  color: Colors.white, fontWeight: FontWeight.w600)),
+                          subtitle: Text(timeDisplay,
+                              style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                          trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _editReminderTime(r);
+                          },
+                        );
+                      }),
+                    ],
                   ),
-                  title: Text(name,
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w600)),
-                  subtitle: Text(timeDisplay,
-                      style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-                  trailing:
-                      const Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _editReminderTime(r);
-                  },
-                );
-              }),
+                ),
+              ),
+
               const SizedBox(height: 8),
             ],
           ),

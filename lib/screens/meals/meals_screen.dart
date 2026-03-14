@@ -21,7 +21,11 @@ class MealsScreen extends StatefulWidget {
 
     Future.microtask(() {
       final auth = context.read<AuthProvider>();
-      context.read<MealProvider>().loadMeals(auth.user!.id, auth.token!);
+       final today = DateTime.now();
+        final date = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+        context.read<MealProvider>().loadMealsByDate(auth.user!.id, date, auth.token!);
+      ///context.read<MealProvider>().loadMeals(auth.user!.id, auth.token!);
     });
 
   }
@@ -64,7 +68,10 @@ class MealsScreen extends StatefulWidget {
                       const SizedBox(width: 12),
                       const Text('Mis comidas', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                       const Spacer(),
-                      const Icon(Icons.notifications_outlined, color: Colors.white),
+                      IconButton(                                                          
+                        onPressed: () => context.push('/reminders'),                     
+                        icon: const Icon(Icons.notifications_outlined, color: Colors.white), 
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -106,7 +113,7 @@ class MealsScreen extends StatefulWidget {
             final auth = context.read<AuthProvider>();
             await context.read<MealProvider>().loadMeals(auth.user!.id, auth.token!);
 
-          },
+          },///
           child: const Icon(Icons.add, color: Colors.white),
         ),
         bottomNavigationBar: const BottomNav(currentIndex: 0),

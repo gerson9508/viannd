@@ -66,10 +66,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.gps_fixed, color: Colors.white70, size: 16),
-                    SizedBox(width: 4),
-                    Text('Controlar peso · 1,800 kcal', style: TextStyle(color: Colors.white70)),
+                  children: [
+                    const Icon(Icons.gps_fixed, color: Colors.white70, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Controlar peso · ${user?.dailyKcal ?? 1800} kcal',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
                   ],
                 ),
               ],
@@ -107,11 +110,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: Column(
                       children: [
-                        _menuItem(Icons.person_outline, 'Datos personales', Colors.blue[100]!, () => context.go('/personal-data')),
+                     _menuItem(Icons.person_outline, 'Datos personales', Colors.blue[100]!, 
+  () => context.push('/personal-data')),
+
                         const Divider(height: 1),
                         _toggleItem(Icons.nightlight_outlined, 'Modo oscuro', Colors.purple[100]!),
                         const Divider(height: 1),
-                        _menuItem(Icons.notifications_outlined, 'Recordatorios', Colors.pink[100]!, () => context.go('/reminders')),
+                     
+_menuItem(Icons.notifications_outlined, 'Recordatorios', Colors.pink[100]!, 
+  () => context.push('/reminders')),   
                       ],
                     ),
                   ),
@@ -180,7 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       trailing: Switch(
         value: _darkMode,
         onChanged: (val) => setState(() => _darkMode = val),
-        activeColor: const Color(0xFF4CAF50),
+        activeThumbColor: const Color(0xFF4CAF50),
       ),
     );
   }

@@ -25,9 +25,20 @@ class AuthProvider extends ChangeNotifier {
     final userId = prefs.getInt('userId');
     final userName = prefs.getString('userName');
     final userEmail = prefs.getString('userEmail');
+     final userDailyKcal = prefs.getInt('userDailyKcal'); 
     if (_token != null && userId != null) {
-      _user = UserModel(id: userId, name: userName ?? '', email: userEmail ?? '');
+      _user = UserModel(
+      id: userId,
+      name: userName ?? '',
+      email: userEmail ?? '',
+      dailyKcal: userDailyKcal ?? 1800, 
+    );
     }
+    notifyListeners();
+  }
+
+  void clearError() {
+    _error = null;
     notifyListeners();
   }
 
@@ -45,6 +56,7 @@ class AuthProvider extends ChangeNotifier {
         await prefs.setInt('userId', _user!.id);
         await prefs.setString('userName', _user!.name);
         await prefs.setString('userEmail', _user!.email);
+        await prefs.setInt('dailyKcal', _user!.dailyKcal ?? 1800);
         _isLoading = false;
         notifyListeners();
         return true;
@@ -75,6 +87,7 @@ class AuthProvider extends ChangeNotifier {
         await prefs.setInt('userId', _user!.id);
         await prefs.setString('userName', _user!.name);
         await prefs.setString('userEmail', _user!.email);
+        await prefs.setInt('dailyKcal', _user!.dailyKcal ?? 1800);
         _isLoading = false;
         notifyListeners();
         return true;
@@ -91,7 +104,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateUser(String name, int age, String gender) async {
+  Future<bool> updateUser(String name, int age, String gender, int kcal) async {
     if (_user == null || _token == null) return false;
     _isLoading = true;
     notifyListeners();
@@ -102,7 +115,12 @@ class AuthProvider extends ChangeNotifier {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_token',
         },
-        body: jsonEncode({'name': name, 'age': age, 'gender': gender}),
+        body: jsonEncode({
+        'name': name,
+        'age': age,
+        'gender': gender,
+        'dailyKcal': kcal, 
+      }),
       );
       if (response.statusCode == 200) {
         _user = UserModel(
@@ -111,9 +129,11 @@ class AuthProvider extends ChangeNotifier {
           email: _user!.email,
           age: age,
           gender: gender,
+          dailyKcal: kcal, 
         );
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('userName', name);
+        await prefs.setInt('userDailyKcal', kcal);
         _isLoading = false;
         notifyListeners();
         return true;

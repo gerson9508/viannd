@@ -4,6 +4,7 @@ class UserModel {
   final String email;
   final int? age;
   final String? gender;
+  final int? dailyKcal;
 
   UserModel({
     required this.id,
@@ -11,6 +12,7 @@ class UserModel {
     required this.email,
     this.age,
     this.gender,
+    this.dailyKcal,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class UserModel {
       email: json['email'],
       age: json['age'],
       gender: json['gender'],
+      dailyKcal: json['dailyKcal'],
     );
   }
 }

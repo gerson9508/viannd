@@ -15,7 +15,7 @@ Future<void> downloadReportPdf(ReportModel report, int weekNumber, String weekRa
           children: [
             // Título
             pw.Text(
-              'Reporte Semanal — Semana $weekNumber',
+              'Reporte Semana $weekNumber',
               style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
             ),
             pw.Text(weekRange, style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey)),

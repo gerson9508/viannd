@@ -14,9 +14,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController(); 
   final _ageController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   String _selectedGender = 'Mujer';
+  String? _passwordMatchError; 
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose(); 
+    _ageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +76,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ),
+
+           
+            const SizedBox(height: 16),
+            const Text('Confirmar contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: _obscureConfirmPassword,
+              decoration: InputDecoration(
+                hintText: 'Repite tu contraseña',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                ),
+                errorText: _passwordMatchError, // muestra el error inline
+              ),
+            ),
+           
+
             const SizedBox(height: 16),
             const Text('Nombre', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -124,6 +157,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: auth.isLoading ? null : () async {
+                  // ← NUEVO: validar que coincidan antes de llamar al provider
+                  if (_passwordController.text != _confirmPasswordController.text) {
+                    setState(() => _passwordMatchError = 'Las contraseñas no coinciden');
+                    return;
+                  }
+                  setState(() => _passwordMatchError = null); // limpiar error si coinciden
+
                   final ok = await auth.register(
                     _nameController.text,
                     _emailController.text,

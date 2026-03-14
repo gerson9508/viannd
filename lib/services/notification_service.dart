@@ -25,7 +25,9 @@ class NotificationService {
   };
 
   Future<void> init() async {
-    tz.initializeTimeZones();
+   // tz.initializeTimeZones();
+    
+    //tz.setLocalLocation(tz.getLocation('America/Mexico_City')); 
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -38,7 +40,6 @@ class NotificationService {
       const InitializationSettings(android: androidSettings, iOS: iosSettings),
     );
 
-    // Solicitar permisos en Android 13+
     await _plugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
@@ -46,6 +47,7 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.requestExactAlarmsPermission();
   }
+
 
   /// Programa una notificación diaria repetitiva para un recordatorio
   Future<void> scheduleReminderNotification({

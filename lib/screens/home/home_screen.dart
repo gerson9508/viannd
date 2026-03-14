@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/meal_provider.dart';
 import '../../providers/day_provider.dart';
+import '../../providers/report_provider.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/calorie_ring.dart';
 
@@ -22,15 +23,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    final auth = context.read<AuthProvider>();
-    final meals = context.read<MealProvider>();
-    final days = context.read<DayProvider>();
-    if (auth.user != null && auth.token != null) {
-      await days.createTodayDay(auth.user!.id, auth.token!);
-      await meals.loadMeals(auth.user!.id, auth.token!);
-      await days.loadDays(auth.user!.id, auth.token!);
-    }
+  final auth = context.read<AuthProvider>();
+  final meals = context.read<MealProvider>();
+  final report = context.read<ReportProvider>();
+
+  if (auth.user != null && auth.token != null) {
+    await meals.loadMeals(auth.user!.id, auth.token!);
+
+    // Cargar reporte de la semana actual
+    final now = DateTime.now();
+    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    final weekEnd = weekStart.add(const Duration(days: 6));
+    await report.loadReport(auth.user!.id, auth.token!, weekStart, weekEnd);
   }
+}
 
   String _formattedDate() {
     final now = DateTime.now();
@@ -50,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final totalProtein = todayMeals.fold<double>(0, (sum, m) => sum + (m.protein ?? 0));
     final totalCarbs = todayMeals.fold<double>(0, (sum, m) => sum + (m.carbs ?? 0));
     final totalFat = todayMeals.fold<double>(0, (sum, m) => sum + (m.fat ?? 0));
-    final goalCalories = 2000.0;
+    final goalCalories = (auth.user?.dailyKcal ?? 1800).toDouble();
     final percent = (totalCalories / goalCalories * 100).clamp(0, 100).toDouble();
     
     final mealTypes = [
@@ -78,7 +84,11 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Inicio', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+                IconButton(
+                  onPressed: () => context.go('/reminders'),
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                )
+
               ],
             ),
           ),
@@ -114,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 20),
                           Expanded(
                             child: Column(
+                              mainAxisSize: MainAxisSize.min, 
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text('Calorías consumidas', style: TextStyle(color: Colors.white70, fontSize: 13)),
@@ -152,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return GestureDetector(
                           onTap: () => context.go('/meals'),
                           child: Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
@@ -208,13 +219,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStreakCard() {
-    final days = context.watch<DayProvider>().days;
+    final report = context.watch<ReportProvider>().report;
     final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-    final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    // El API devuelve "Mon","Tue","Wed","Thu","Fri","Sat","Sun"
+    const apiDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    final activeDays = report?.dailyCalories
+        .map((d) => d['day'] as String)
+        .toSet() ?? {};
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.black87,
         borderRadius: BorderRadius.circular(16),
@@ -222,11 +237,14 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.local_fire_department, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('Racha de registros', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              const Icon(Icons.local_fire_department, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(
+                'Racha de registros  🔥 ${report?.consecutiveDays ?? 0} días',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -235,9 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(7, (i) {
-              final day = weekStart.add(Duration(days: i));
-              final dayStr = day.toIso8601String().split('T')[0];
-              final hasDay = days.any((d) => d.date.startsWith(dayStr));
+              final hasDay = activeDays.contains(apiDays[i]);
               return Column(
                 children: [
                   Text(weekDays[i], style: const TextStyle(color: Colors.grey, fontSize: 12)),

@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/meal_provider.dart';
 import '../../providers/day_provider.dart';
 import '../../widgets/bottom_nav.dart';
+import 'package:go_router/go_router.dart'; 
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -80,7 +81,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     Text('Historial', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                const Icon(Icons.notifications_outlined, color: Colors.white),
+                IconButton(                                              
+                  onPressed: () => context.push('/reminders'),        
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                ),
               ],
             ),
           ),

@@ -4,7 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../services/report_pdf.dart';
-
+import 'package:go_router/go_router.dart'; 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
@@ -88,10 +88,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Título + campana
-                Row(
+               Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'Mis reportes',
                       style: TextStyle(
                         color: Colors.white,
@@ -99,7 +99,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Icon(Icons.notifications_outlined, color: Colors.white),
+                    IconButton(                                                        
+                      onPressed: () => context.push('/reminders'),                
+                      icon: const Icon(Icons.notifications_outlined, color: Colors.white), 
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),

@@ -20,13 +20,13 @@ class _AddMealScreenState extends State<AddMealScreen> {
   final _nameController = TextEditingController();
   final _foodService = FoodService();
   List<FoodModel> _searchResults = [];
-  List<Map<String, dynamic>> _selectedFoods = [];
+  final List<Map<String, dynamic>> _selectedFoods = [];
   bool _isSearching = false;
   bool _isOutsideDiet = false;
   int _selectedMealType = 1;
   double _selectedQuantity = 100;
   String _selectedCategory = 'todo';
-  DateTime _selectedDate = DateTime.now();
+  final DateTime _selectedDate = DateTime.now();
 
   List<Map<String, dynamic>> _categories = [];
     
@@ -133,15 +133,18 @@ class _AddMealScreenState extends State<AddMealScreen> {
           Container(
             padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
             color: _isOutsideDiet ? Colors.deepOrange : const Color(0xFF43A047),
-            child: Row(
-              children: [
-                GestureDetector(onTap: () => context.go('/meals'), child: const Icon(Icons.arrow_back, color: Colors.white)),
-                const SizedBox(width: 12),
-                const Text('Agregar alimento', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                const Icon(Icons.notifications_outlined, color: Colors.white),
-              ],
-            ),
+            child:Row(
+                children: [
+                  GestureDetector(onTap: () => context.go('/meals'), child: const Icon(Icons.arrow_back, color: Colors.white)),
+                  const SizedBox(width: 12),
+                  const Text('Agregar alimento', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  IconButton(                                                         
+                    onPressed: () => context.push('/reminders'),                     
+                    icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                  ),
+                ],
+              ),
           ),
           if (_isOutsideDiet)
             Container(

@@ -16,6 +16,32 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    // Limpiar error residual al entrar a la pantalla
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().clearError(); 
+    });
+
+    // Limpiar error en tiempo real al escribir
+    _emailController.addListener(_clearErrorOnType);       
+    _passwordController.addListener(_clearErrorOnType);    
+  }
+
+  void _clearErrorOnType() {                              
+    if (context.read<AuthProvider>().error != null) {
+      context.read<AuthProvider>().clearError();
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
@@ -58,6 +84,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,        
+                    enableSuggestions: false, 
                     decoration: InputDecoration(
                       hintText: 'hey@tuemail.com',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -94,8 +122,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: auth.isLoading ? null : () async {
-                        final ok = await auth.login(_emailController.text, _passwordController.text);
+                        final ok = await auth.login(
+                          _emailController.text,
+                          _passwordController.text,
+                        );
                         if (ok && context.mounted) context.go('/home');
+                        // Si ok == false, el error ya aparece en pantalla y NO navegamos
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),

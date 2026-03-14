@@ -11,6 +11,14 @@ class MealService {
     return jsonDecode(response.body);
   }
 
+  Future<List<dynamic>> getMealsByUserAndDate(int userId, String date, String token) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/meals/user/$userId/date?date=$date'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return jsonDecode(response.body);
+  }
+
   Future<Map<String, dynamic>> createMeal(Map<String, dynamic> data, String token) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/meals'),

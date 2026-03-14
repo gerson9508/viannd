@@ -26,11 +26,27 @@ class MealProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadMealsByDate(int userId, String date, String token) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final data = await _mealService.getMealsByUserAndDate(userId, date, token);
+      _meals = data.map((m) => MealModel.fromJson(m)).toList();
+    } catch (e) {
+      _meals = [];
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
   Future<bool> addMeal(Map<String, dynamic> data, String token, int userId) async {
     try {
       final result = await _mealService.createMeal(data, token);
       if (result['id'] != null) {
-        await loadMeals(userId, token);
+        final today = DateTime.now();
+        final date = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+          await loadMealsByDate(userId,date, token);
+        // await loadMeals(userId, token);
         //_meals.add(MealModel.fromJson(result));
         notifyListeners();
         return true;
