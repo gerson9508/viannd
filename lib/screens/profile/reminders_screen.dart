@@ -54,14 +54,19 @@ class _RemindersScreenState extends State<RemindersScreen> {
       final data = await _reminderService.getRemindersByUser(auth.user!.id, auth.token!);
       setState(() {
         _reminders = data.map((r) => ReminderModel.fromJson(r)).toList();
+        _isLoading = false;
       });
     } catch (e) {
-      setState(() => _reminders = []);
+      setState(() {
+        _reminders = [];
+        _isLoading = false;
+      });
     }
 
-    await _syncNotifications(_reminders);
-
-    setState(() => _isLoading = false);
+    // notificaciones aparte, sin bloquear la pantalla
+    try {
+      await _syncNotifications(_reminders).timeout(const Duration(seconds: 5));
+    } catch (_) {}
   }
 
   Future<void> _syncNotifications(List<ReminderModel> reminders) async {
@@ -85,63 +90,62 @@ class _RemindersScreenState extends State<RemindersScreen> {
   }
 
   Future<void> _editReminderTime(ReminderModel reminder) async {
-  TimeOfDay initialTime = const TimeOfDay(hour: 8, minute: 0);
-  if (reminder.time.isNotEmpty && reminder.time != '00:00') {
-    final parts = reminder.time.split(':');
-    if (parts.length >= 2) { 
-      final h = int.tryParse(parts[0]) ?? 8;
-      final m = int.tryParse(parts[1]) ?? 0;
-      initialTime = TimeOfDay(hour: h, minute: m);
+    TimeOfDay initialTime = const TimeOfDay(hour: 8, minute: 0);
+    if (reminder.time.isNotEmpty && reminder.time != '00:00') {
+      final parts = reminder.time.split(':');
+      if (parts.length >= 2) {
+        final h = int.tryParse(parts[0]) ?? 8;
+        final m = int.tryParse(parts[1]) ?? 0;
+        initialTime = TimeOfDay(hour: h, minute: m);
+      }
+    }
+
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF4CAF50),
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked == null || !mounted) return;
+
+    final timeStr =
+        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+    final auth = context.read<AuthProvider>();
+
+    await _reminderService.deleteReminder(reminder.id, auth.token!);
+    await _reminderService.createReminder(
+      {
+        'userId': auth.user!.id,
+        'mealType': reminder.mealType,
+        'time': timeStr,
+        'active': reminder.active,
+      },
+      auth.token!,
+    );
+    await _loadReminders();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Alarma de ${_mealTypeNames[reminder.mealType]} actualizada a $timeStr'),
+          backgroundColor: const Color(0xFF4CAF50),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     }
   }
-
-  final picked = await showTimePicker(
-    context: context,
-    initialTime: initialTime, 
-    builder: (context, child) {
-      return Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF4CAF50),
-            onPrimary: Colors.white,
-            onSurface: Colors.black87,
-          ),
-        ),
-        child: child!,
-      );
-    },
-  );
-
-  if (picked == null || !mounted) return;
-
-  final timeStr =
-      '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-  final auth = context.read<AuthProvider>();
-
-  await _reminderService.deleteReminder(reminder.id, auth.token!);
-  await _reminderService.createReminder(
-    {
-      'userId': auth.user!.id,
-      'mealType': reminder.mealType,
-      'time': timeStr,
-      'active': reminder.active,
-    },
-    auth.token!,
-  );
-  await _loadReminders();
-
-  if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Alarma de ${_mealTypeNames[reminder.mealType]} actualizada a $timeStr'),
-        backgroundColor: const Color(0xFF4CAF50),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-}
-
 
   Future<void> _createDefaultReminders() async {
     final auth = context.read<AuthProvider>();
@@ -171,9 +175,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 GestureDetector(
                   onTap: () {
                     if (context.canPop()) {
-                      context.pop();          // regresa al stack anterior
+                      context.pop();
                     } else {
-                      context.go('/home');    // fallback si no hay stack
+                      context.go('/home');
                     }
                   },
                   child: Container(
@@ -199,7 +203,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
               ],
             ),
           ),
-
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF4CAF50)))
@@ -242,8 +245,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
                               color: const Color(0xFF2C2C2C),
                               borderRadius: BorderRadius.circular(18),
@@ -275,10 +277,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                       const SizedBox(height: 2),
                                       Text(
                                         timeDisplay,
-                                        style: TextStyle(
-                                          color: Colors.grey[400],
-                                          fontSize: 13,
-                                        ),
+                                        style: TextStyle(color: Colors.grey[400], fontSize: 13),
                                       ),
                                     ],
                                   ),
@@ -296,7 +295,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         },
                       ),
           ),
-
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
             child: SizedBox(
@@ -307,8 +305,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                   backgroundColor: const Color(0xFF4CAF50),
                   disabledBackgroundColor: Colors.grey[800],
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
                 icon: const Icon(Icons.alarm, color: Colors.white),
@@ -332,7 +329,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
   void _showEditAlarmSheet() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // ✅ FIX 1: permite altura dinámica
+      isScrollControlled: true,
       backgroundColor: const Color(0xFF2C2C2C),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -353,8 +350,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-             
               ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.5,
@@ -397,7 +392,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 8),
             ],
           ),

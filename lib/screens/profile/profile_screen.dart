@@ -181,8 +181,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: ListTile(
                       onTap: () async {
-                        await auth.logout();
-                        if (context.mounted) context.go('/');
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Text(
+                              '¿Cerrar sesión?',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            content: const Text('¿Estás seguro de que deseas cerrar sesión?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: Text(
+                                  'Cancelar',
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text(
+                                  'Cerrar sesión',
+                                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true && context.mounted) {
+                          await auth.logout();
+                          if (context.mounted) context.go('/');
+                        }
                       },
                       title: const Text(
                         'Cerrar sesión',

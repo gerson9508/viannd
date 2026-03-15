@@ -56,6 +56,7 @@ class AuthProvider extends ChangeNotifier {
         await prefs.setInt('userId', _user!.id);
         await prefs.setString('userName', _user!.name);
         await prefs.setString('userEmail', _user!.email);
+        // await prefs.setInt('age', _user!.age);
         await prefs.setInt('dailyKcal', _user!.dailyKcal ?? 1800);
         _isLoading = false;
         notifyListeners();
