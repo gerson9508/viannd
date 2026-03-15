@@ -18,17 +18,14 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Limpiar error residual al entrar a la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().clearError(); 
+      context.read<AuthProvider>().clearError();
     });
-
-    // Limpiar error en tiempo real al escribir
-    _emailController.addListener(_clearErrorOnType);       
-    _passwordController.addListener(_clearErrorOnType);    
+    _emailController.addListener(_clearErrorOnType);
+    _passwordController.addListener(_clearErrorOnType);
   }
 
-  void _clearErrorOnType() {                              
+  void _clearErrorOnType() {
     if (context.read<AuthProvider>().error != null) {
       context.read<AuthProvider>().clearError();
     }
@@ -44,6 +41,25 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: theme.dividerColor),
+    );
+
+    final inputDecoration = InputDecoration(
+      filled: true,
+      fillColor: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
+      hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4)),
+      border: inputBorder,
+      enabledBorder: inputBorder,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+      ),
+    );
 
     return Scaffold(
       body: Column(
@@ -69,39 +85,55 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Inicio de sesión', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Inicio de sesión',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   RichText(
-                    text: const TextSpan(
+                    text: TextSpan(
                       text: 'Inicia sesión con tu cuenta de ',
-                      style: TextStyle(color: Colors.black87, fontSize: 15),
-                      children: [TextSpan(text: 'Viannd.', style: TextStyle(fontWeight: FontWeight.bold))],
+                      style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7), fontSize: 15),
+                      children: [
+                        TextSpan(
+                          text: 'Viannd.',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Email', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    autocorrect: false,        
-                    enableSuggestions: false, 
-                    decoration: InputDecoration(
-                      hintText: 'hey@tuemail.com',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: inputDecoration.copyWith(hintText: 'hey@tuemail.com'),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Contraseña', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
-                    decoration: InputDecoration(
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: inputDecoration.copyWith(
                       hintText: 'Introduce tu contraseña',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
@@ -110,7 +142,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {},
-                      child: const Text('¿Olvidaste tu contraseña?'),
+                      child: Text(
+                        '¿Olvidaste tu contraseña?',
+                        style: TextStyle(color: const Color(0xFF4CAF50)),
+                      ),
                     ),
                   ),
                   if (auth.error != null)
@@ -121,22 +156,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: auth.isLoading ? null : () async {
-                        final ok = await auth.login(
-                          _emailController.text,
-                          _passwordController.text,
-                        );
-                        if (ok && context.mounted) context.go('/home');
-                        // Si ok == false, el error ya aparece en pantalla y NO navegamos
-                      },
+                      onPressed: auth.isLoading
+                          ? null
+                          : () async {
+                              final ok = await auth.login(
+                                _emailController.text,
+                                _passwordController.text,
+                              );
+                              if (ok && context.mounted) context.go('/home');
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
+                        disabledBackgroundColor: theme.disabledColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: auth.isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Inicia sesión', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                          : const Text(
+                              'Inicia sesión',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -144,10 +184,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: GestureDetector(
                       onTap: () => context.go('/register'),
                       child: RichText(
-                        text: const TextSpan(
+                        text: TextSpan(
                           text: '¿No tienes cuenta? ',
-                          style: TextStyle(color: Colors.black87),
-                          children: [TextSpan(text: 'Regístrate', style: TextStyle(fontWeight: FontWeight.bold))],
+                          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                          children: [
+                            TextSpan(
+                              text: 'Regístrate',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

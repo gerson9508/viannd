@@ -23,20 +23,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-  final auth = context.read<AuthProvider>();
-  final meals = context.read<MealProvider>();
-  final report = context.read<ReportProvider>();
+    final auth = context.read<AuthProvider>();
+    final meals = context.read<MealProvider>();
+    final report = context.read<ReportProvider>();
 
-  if (auth.user != null && auth.token != null) {
-    await meals.loadMeals(auth.user!.id, auth.token!);
-
-    // Cargar reporte de la semana actual
-    final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final weekEnd = weekStart.add(const Duration(days: 6));
-    await report.loadReport(auth.user!.id, auth.token!, weekStart, weekEnd);
+    if (auth.user != null && auth.token != null) {
+      await meals.loadMeals(auth.user!.id, auth.token!);
+      final now = DateTime.now();
+      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekEnd = weekStart.add(const Duration(days: 6));
+      await report.loadReport(auth.user!.id, auth.token!, weekStart, weekEnd);
+    }
   }
-}
 
   String _formattedDate() {
     final now = DateTime.now();
@@ -47,9 +45,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final auth = context.watch<AuthProvider>();
     final mealProvider = context.watch<MealProvider>();
-    final days = context.read<DayProvider>();
     final today = DateTime.now().toIso8601String().split('T')[0];
     final todayMeals = mealProvider.meals.where((m) => m.date.startsWith(today)).toList();
     final totalCalories = todayMeals.fold<double>(0, (sum, m) => sum + (m.calories ?? 0));
@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final totalFat = todayMeals.fold<double>(0, (sum, m) => sum + (m.fat ?? 0));
     final goalCalories = (auth.user?.dailyKcal ?? 1800).toDouble();
     final percent = (totalCalories / goalCalories * 100).clamp(0, 100).toDouble();
-    
+
     final mealTypes = [
       {'label': 'Desayuno', 'type': 1, 'icon': Icons.egg_alt},
       {'label': 'Comida', 'type': 2, 'icon': Icons.restaurant},
@@ -67,15 +67,16 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0EB),
       body: Column(
         children: [
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF43A047), Color(0xFF66BB6A)],
+                colors: isDark
+                    ? [const Color(0xFF2E7D32), const Color(0xFF388E3C)]
+                    : [const Color(0xFF43A047), const Color(0xFF66BB6A)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -87,8 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 IconButton(
                   onPressed: () => context.go('/reminders'),
                   icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                )
-
+                ),
               ],
             ),
           ),
@@ -101,7 +101,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_formattedDate(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(
+                      _formattedDate(),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Container(
                       width: double.infinity,
@@ -124,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 20),
                           Expanded(
                             child: Column(
-                              mainAxisSize: MainAxisSize.min, 
+                              mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text('Calorías consumidas', style: TextStyle(color: Colors.white70, fontSize: 13)),
@@ -145,9 +152,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildStreakCard(),
+                    _buildStreakCard(context),
                     const SizedBox(height: 20),
-                    const Text('Comidas de hoy', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Comidas de hoy',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     GridView.count(
                       shrinkWrap: true,
@@ -165,29 +179,37 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardColor,
                               borderRadius: BorderRadius.circular(16),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 8)],
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Icon(mt['icon'] as IconData, color: const Color(0xFF4CAF50)),
                                 const Spacer(),
-                                Text(mt['label'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                Text('${typeCalories.toInt()} kcal', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                Text(
+                                  mt['label'] as String,
+                                  style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                                ),
+                                Text(
+                                  '${typeCalories.toInt()} kcal',
+                                  style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                                ),
                                 const SizedBox(height: 4),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: registered ? const Color(0xFFE8F5E9) : const Color(0xFFFFEDED),
+                                    color: registered
+                                        ? (isDark ? const Color(0xFF1B5E20) : const Color(0xFFE8F5E9))
+                                        : (isDark ? const Color(0xFF4E0000) : const Color(0xFFFFEDED)),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
                                     registered ? 'Registrado' : 'Pendiente',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: registered ? const Color(0xFF4CAF50) : Colors.red,
+                                      color: registered ? const Color(0xFF4CAF50) : Colors.red[isDark ? 200 : 700],
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -218,10 +240,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStreakCard() {
+  Widget _buildStreakCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final report = context.watch<ReportProvider>().report;
-    final weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-    // El API devuelve "Mon","Tue","Wed","Thu","Fri","Sat","Sun"
+    const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     const apiDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     final activeDays = report?.dailyCalories
@@ -231,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.black87,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.black87,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

@@ -6,6 +6,9 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: Column(
         children: [
@@ -26,19 +29,26 @@ class WelcomeScreen extends StatelessWidget {
           Expanded(
             flex: 4,
             child: Container(
-              color: Colors.white,
+              color: theme.cardColor,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Bienvenido a Viannd!',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Vigila tu consumo alimenticio y alcanza tus objetivos de salud.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
                   ),
                   const Spacer(),
                   Row(
@@ -48,9 +58,17 @@ class WelcomeScreen extends StatelessWidget {
                           onPressed: () => context.go('/login'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.3)),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text('Iniciar sesión', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                          child: Text(
+                            'Iniciar sesión',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -62,7 +80,10 @@ class WelcomeScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text('Registrarse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                          child: const Text(
+                            'Registrarse',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
                         ),
                       ),
                     ],

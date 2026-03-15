@@ -23,7 +23,7 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
     final user = context.read<AuthProvider>().user;
     _nameController = TextEditingController(text: user?.name ?? '');
     _ageController = TextEditingController(text: user?.age?.toString() ?? '');
-     _kcalController = TextEditingController(text: user?.dailyKcal?.toString() ?? '1800');/// 
+    _kcalController = TextEditingController(text: user?.dailyKcal?.toString() ?? '1800');
     _selectedGender = user?.gender ?? 'Mujer';
     if (!['Mujer', 'Hombre', 'Otro'].contains(_selectedGender)) {
       _selectedGender = 'Mujer';
@@ -52,7 +52,6 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
       _showSnack('Ingresa una edad válida', isError: true);
       return;
     }
-
     final kcal = int.tryParse(kcalText);
     if (kcal == null || kcal < 500 || kcal > 10000) {
       _showSnack('Ingresa un valor de kcal válido (500–10000)', isError: true);
@@ -61,7 +60,7 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
 
     setState(() => _isSaving = true);
     final auth = context.read<AuthProvider>();
-    final ok = await auth.updateUser(name, age, _selectedGender,kcal);//,kcal
+    final ok = await auth.updateUser(name, age, _selectedGender, kcal);
     if (!mounted) return;
     setState(() => _isSaving = false);
 
@@ -86,17 +85,20 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0EB),
       body: Column(
         children: [
-          // Header verde
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF43A047), Color(0xFF66BB6A)],
+                colors: isDark
+                    ? [const Color(0xFF2E7D32), const Color(0xFF388E3C)]
+                    : [const Color(0xFF43A047), const Color(0xFF66BB6A)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -126,7 +128,6 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
               ],
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -134,8 +135,6 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-
-                  // Avatar central
                   Center(
                     child: Consumer<AuthProvider>(
                       builder: (_, auth, _) {
@@ -158,16 +157,14 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-
-                  // Formulario
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.cardColor,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -176,29 +173,26 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Nombre
-                        _fieldLabel('Nombre completo'),
+                        _fieldLabel(context, 'Nombre completo'),
                         const SizedBox(height: 8),
                         _inputField(
+                          context: context,
                           controller: _nameController,
                           hint: 'Tu nombre',
                           icon: Icons.person_outline,
                         ),
                         const SizedBox(height: 20),
-
-                        // Edad
-                        _fieldLabel('Edad'),
+                        _fieldLabel(context, 'Edad'),
                         const SizedBox(height: 8),
                         _inputField(
+                          context: context,
                           controller: _ageController,
                           hint: 'Tu edad',
                           icon: Icons.cake_outlined,
                           keyboardType: TextInputType.number,
                         ),
                         const SizedBox(height: 20),
-
-                        // Género
-                        _fieldLabel('Género'),
+                        _fieldLabel(context, 'Género'),
                         const SizedBox(height: 12),
                         Row(
                           children: ['Mujer', 'Hombre', 'Otro'].map((g) {
@@ -212,19 +206,21 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                                   decoration: BoxDecoration(
                                     color: selected
                                         ? const Color(0xFF4CAF50)
-                                        : Colors.grey[100],
+                                        : theme.colorScheme.surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: selected
                                           ? const Color(0xFF4CAF50)
-                                          : Colors.grey[300]!,
+                                          : theme.dividerColor,
                                     ),
                                   ),
                                   child: Text(
                                     g,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: selected ? Colors.white : Colors.black87,
+                                      color: selected
+                                          ? Colors.white
+                                          : theme.colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -234,11 +230,10 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                           }).toList(),
                         ),
                         const SizedBox(height: 20),
-
-                        // Kilocalorías diarias
-                        _fieldLabel('Kilocalorías diarias'),
+                        _fieldLabel(context, 'Kilocalorías diarias'),
                         const SizedBox(height: 8),
                         _inputField(
+                          context: context,
                           controller: _kcalController,
                           hint: 'Ej. 1800',
                           icon: Icons.local_fire_department_outlined,
@@ -247,17 +242,14 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  // Botón guardar
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _save,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
-                        disabledBackgroundColor: Colors.grey[300],
+                        disabledBackgroundColor: theme.disabledColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -292,39 +284,46 @@ class _PersonalDataScreenState extends State<PersonalDataScreen> {
     );
   }
 
-  Widget _fieldLabel(String text) {
+  Widget _fieldLabel(BuildContext context, String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: Colors.black54,
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
       ),
     );
   }
 
   Widget _inputField({
+    required BuildContext context,
     required TextEditingController controller,
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      style: TextStyle(color: theme.colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[400]),
+        hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4)),
         prefixIcon: Icon(icon, color: const Color(0xFF4CAF50)),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : Colors.grey[50],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

@@ -13,25 +13,23 @@ class MealsScreen extends StatefulWidget {
   State<MealsScreen> createState() => _MealsScreenState();
 }
 
- class _MealsScreenState extends State<MealsScreen> {
-
+class _MealsScreenState extends State<MealsScreen> {
   @override
   void initState() {
     super.initState();
-
     Future.microtask(() {
       final auth = context.read<AuthProvider>();
-       final today = DateTime.now();
-        final date = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
-        context.read<MealProvider>().loadMealsByDate(auth.user!.id, date, auth.token!);
-      ///context.read<MealProvider>().loadMeals(auth.user!.id, auth.token!);
+      final today = DateTime.now();
+      final date = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      context.read<MealProvider>().loadMealsByDate(auth.user!.id, date, auth.token!);
     });
-
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final auth = context.watch<AuthProvider>();
     final mealProvider = context.watch<MealProvider>();
 
@@ -45,14 +43,15 @@ class MealsScreen extends StatefulWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F0EB),
         body: Column(
           children: [
             Container(
               padding: const EdgeInsets.fromLTRB(24, 56, 24, 0),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF43A047), Color(0xFF66BB6A)],
+                  colors: isDark
+                      ? [const Color(0xFF2E7D32), const Color(0xFF388E3C)]
+                      : [const Color(0xFF43A047), const Color(0xFF66BB6A)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -66,11 +65,14 @@ class MealsScreen extends StatefulWidget {
                         child: const Icon(Icons.arrow_back, color: Colors.white),
                       ),
                       const SizedBox(width: 12),
-                      const Text('Mis comidas', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Mis comidas',
+                        style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
                       const Spacer(),
-                      IconButton(                                                          
-                        onPressed: () => context.push('/reminders'),                     
-                        icon: const Icon(Icons.notifications_outlined, color: Colors.white), 
+                      IconButton(
+                        onPressed: () => context.push('/reminders'),
+                        icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                       ),
                     ],
                   ),
@@ -90,7 +92,12 @@ class MealsScreen extends StatefulWidget {
                 children: mealTypes.map((mt) {
                   final meals = mealProvider.getMealsByType(mt['type'] as int);
                   return meals.isEmpty
-                      ? const Center(child: Text('Sin comidas registradas'))
+                      ? Center(
+                          child: Text(
+                            'Sin comidas registradas',
+                            style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                          ),
+                        )
                       : ListView.builder(
                           padding: const EdgeInsets.all(20),
                           itemCount: meals.length,
@@ -107,13 +114,10 @@ class MealsScreen extends StatefulWidget {
         floatingActionButton: FloatingActionButton(
           backgroundColor: const Color(0xFF4CAF50),
           onPressed: () async {
-
             await context.push('/add-meal');
-
             final auth = context.read<AuthProvider>();
             await context.read<MealProvider>().loadMeals(auth.user!.id, auth.token!);
-
-          },///
+          },
           child: const Icon(Icons.add, color: Colors.white),
         ),
         bottomNavigationBar: const BottomNav(currentIndex: 0),
