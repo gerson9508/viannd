@@ -88,7 +88,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
   TimeOfDay initialTime = const TimeOfDay(hour: 8, minute: 0);
   if (reminder.time.isNotEmpty && reminder.time != '00:00') {
     final parts = reminder.time.split(':');
-    if (parts.length >= 2) { // ✅ acepta "14:00" Y "14:00:00"
+    if (parts.length >= 2) { 
       final h = int.tryParse(parts[0]) ?? 8;
       final m = int.tryParse(parts[1]) ?? 0;
       initialTime = TimeOfDay(hour: h, minute: m);
@@ -97,7 +97,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
   final picked = await showTimePicker(
     context: context,
-    initialTime: initialTime, // ✅ ahora sí llega con 14:00
+    initialTime: initialTime, 
     builder: (context, child) {
       return Theme(
         data: Theme.of(context).copyWith(
@@ -354,7 +354,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
               ),
               const SizedBox(height: 16),
 
-              // ✅ FIX 2 y 3: altura máxima + scroll para el CT40
+             
               ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.5,

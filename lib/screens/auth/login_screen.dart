@@ -14,6 +14,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String? _emailError;
+  String? _passwordError;
+
+  bool get _isFormValid =>
+      _emailError == null &&
+      _passwordError == null &&
+      _emailController.text.isNotEmpty &&
+      _passwordController.text.isNotEmpty;
 
   @override
   void initState() {
@@ -21,14 +29,56 @@ class _LoginScreenState extends State<LoginScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthProvider>().clearError();
     });
-    _emailController.addListener(_clearErrorOnType);
-    _passwordController.addListener(_clearErrorOnType);
+    _emailController.addListener(_validateEmail);
+    _passwordController.addListener(_validatePassword);
   }
 
-  void _clearErrorOnType() {
+  void _validateEmail() {
+    final value = _emailController.text;
+    final emailRegex = RegExp(r'^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$');
+    setState(() {
+      if (value.isEmpty) {
+        _emailError = 'El correo es obligatorio';
+      } else if (!emailRegex.hasMatch(value)) {
+        _emailError = 'Ingresa un correo válido';
+      } else {
+        _emailError = null;
+      }
+    });
     if (context.read<AuthProvider>().error != null) {
       context.read<AuthProvider>().clearError();
     }
+  }
+
+  void _validatePassword() {
+    final value = _passwordController.text;
+    setState(() {
+      if (value.isEmpty) {
+        _passwordError = 'La contraseña es obligatoria';
+      } else if (value.length < 6) {
+        _passwordError = 'Mínimo 6 caracteres';
+      } else {
+        _passwordError = null;
+      }
+    });
+    if (context.read<AuthProvider>().error != null) {
+      context.read<AuthProvider>().clearError();
+    }
+  }
+
+  bool _submitted = false;
+
+  void _onSubmit() async {
+    setState(() => _submitted = true);
+    _validateEmail();
+    _validatePassword();
+    if (!_isFormValid) return;
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.login(
+      _emailController.text,
+      _passwordController.text,
+    );
+    if (ok && context.mounted) context.go('/home');
   }
 
   @override
@@ -44,22 +94,46 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final inputBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: theme.dividerColor),
-    );
-
-    final inputDecoration = InputDecoration(
-      filled: true,
-      fillColor: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
-      hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4)),
-      border: inputBorder,
-      enabledBorder: inputBorder,
-      focusedBorder: OutlineInputBorder(
+    InputDecoration buildInputDecoration({
+      required String hint,
+      String? errorText,
+      Widget? suffixIcon,
+    }) {
+      final base = OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
-      ),
-    );
+        borderSide: BorderSide(color: theme.dividerColor),
+      );
+      return InputDecoration(
+        filled: true,
+        fillColor: isDark ? theme.colorScheme.surfaceContainerHighest : Colors.white,
+        hintText: hint,
+        hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4)),
+        errorText: _submitted ? errorText : null,
+        suffixIcon: suffixIcon,
+        border: base,
+        enabledBorder: errorText != null && _submitted
+            ? OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              )
+            : base,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: errorText != null && _submitted ? Colors.red : const Color(0xFF4CAF50),
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
+        ),
+      );
+    }
 
     return Scaffold(
       body: Column(
@@ -97,7 +171,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   RichText(
                     text: TextSpan(
                       text: 'Inicia sesión con tu cuenta de ',
-                      style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7), fontSize: 15),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        fontSize: 15,
+                      ),
                       children: [
                         TextSpan(
                           text: 'Viannd.',
@@ -110,7 +187,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Text('Email', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                  Text(
+                    'Email',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _emailController,
@@ -118,17 +201,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     autocorrect: false,
                     enableSuggestions: false,
                     style: TextStyle(color: theme.colorScheme.onSurface),
-                    decoration: inputDecoration.copyWith(hintText: 'hey@tuemail.com'),
+                    decoration: buildInputDecoration(
+                      hint: 'hey@tuemail.com',
+                      errorText: _emailError,
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Contraseña', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                  Text(
+                    'Contraseña',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     style: TextStyle(color: theme.colorScheme.onSurface),
-                    decoration: inputDecoration.copyWith(
-                      hintText: 'Introduce tu contraseña',
+                    decoration: buildInputDecoration(
+                      hint: 'Introduce tu contraseña',
+                      errorText: _passwordError,
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -142,40 +235,42 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {},
-                      child: Text(
-                        '¿Olvidaste tu contraseña?',
-                        style: TextStyle(color: const Color(0xFF4CAF50)),
+                      child: const Text(
+                        // '¿Olvidaste tu contraseña?',
+                         '',
+                        style: TextStyle(color: Color(0xFF4CAF50)),
                       ),
                     ),
                   ),
                   if (auth.error != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(auth.error!, style: const TextStyle(color: Colors.red)),
+                      child: Text(
+                        auth.error!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: auth.isLoading
-                          ? null
-                          : () async {
-                              final ok = await auth.login(
-                                _emailController.text,
-                                _passwordController.text,
-                              );
-                              if (ok && context.mounted) context.go('/home');
-                            },
+                      onPressed: auth.isLoading ? null : _onSubmit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
                         disabledBackgroundColor: theme.disabledColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: auth.isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
                               'Inicia sesión',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                     ),
                   ),
@@ -186,7 +281,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: RichText(
                         text: TextSpan(
                           text: '¿No tienes cuenta? ',
-                          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
                           children: [
                             TextSpan(
                               text: 'Regístrate',
