@@ -74,36 +74,36 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(String name, String email, String password, int age, String gender) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
-      final data = await _authService.register(name, email, password, age, gender);
-      if (data['token'] != null) {
-        _token = data['token'];
-        _user = UserModel.fromJson(data['user']);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', _token!);
-        await prefs.setInt('userId', _user!.id);
-        await prefs.setString('userName', _user!.name);
-        await prefs.setString('userEmail', _user!.email);
-        await prefs.setInt('dailyKcal', _user!.dailyKcal ?? 1800);
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      }
-      _error = data['message'] ?? 'Error al registrarse';
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _error = 'Error de conexión';
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
+  // Future<bool> register_(String name, String email, String password, int age, String gender) async {
+  //   _isLoading = true;
+  //   _error = null;
+  //   notifyListeners();
+  //   try {
+  //     final data = await _authService.register(name, email, password, age, gender);
+  //     if (data['token'] != null) {
+  //       _token = data['token'];
+  //       _user = UserModel.fromJson(data['user']);
+  //       final prefs = await SharedPreferences.getInstance();
+  //       await prefs.setString('token', _token!);
+  //       await prefs.setInt('userId', _user!.id);
+  //       await prefs.setString('userName', _user!.name);
+  //       await prefs.setString('userEmail', _user!.email);
+  //       await prefs.setInt('dailyKcal', _user!.dailyKcal ?? 1800);
+  //       _isLoading = false;
+  //       notifyListeners();
+  //       return true;
+  //     }
+  //     _error = data['message'] ?? 'Error al registrarse';
+  //     _isLoading = false;
+  //     notifyListeners();
+  //     return false;
+  //   } catch (e) {
+  //     _error = 'Error de conexión';
+  //     _isLoading = false;
+  //     notifyListeners();
+  //     return false;
+  //   }
+  // }
 
   Future<bool> updateUser(String name, int age, String gender, int kcal) async {
     if (_user == null || _token == null) return false;
@@ -111,7 +111,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final response = await http.patch(
-        Uri.parse('${ApiConfig.baseUrl}/users/${_user!.id}'),
+        Uri.parse('${ApiConfig.baseUrl}/users'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_token',
@@ -156,4 +156,67 @@ class AuthProvider extends ChangeNotifier {
     await prefs.clear();
     notifyListeners();
   }
+
+  Future<bool> register(String name, String email, String password, int age, String gender, {required String code}) async {
+  _isLoading = true;
+  _error = null;
+  notifyListeners();
+  try {
+    final data = await _authService.register(name, email, password, age, gender, code: code);
+    if (data['token'] != null) {
+      _token = data['token'];
+      _user = UserModel.fromJson(data['user']);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', _token!);
+      await prefs.setInt('userId', _user!.id);
+      await prefs.setString('userName', _user!.name);
+      await prefs.setString('userEmail', _user!.email);
+      await prefs.setInt('dailyKcal', _user!.dailyKcal ?? 1800);
+      _isLoading = false;
+      notifyListeners();
+      return true; 
+    }
+    _error = data['message'] ?? 'Error al registrarse';
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  } catch (e) {
+    _error = 'Error de conexión';
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+}
+
+  Future<Map<String, dynamic>> sendVerificationCode({
+  required String name,
+  required String email,
+  required String password,
+  required int age,
+  required String gender,
+}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final data = await _authService.sendVerificationCode(
+        name: name,
+        email: email,
+        password: password,
+        age: age,
+        gender: gender,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return data;
+    } catch (e) {
+      _error = 'Error de conexión';
+      _isLoading = false;
+      notifyListeners();
+      return {'error': _error};
+    }
+  }
+
+  
+
 }

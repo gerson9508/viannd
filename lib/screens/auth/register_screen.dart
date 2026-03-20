@@ -43,6 +43,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _ageController.text.isNotEmpty &&
       _acceptedTerms;
 
+  Map<String, dynamic>? _pendingRegistration;
+
   @override
   void initState() {
     super.initState();
@@ -135,21 +137,132 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _submitted = true;
       _termsError = !_acceptedTerms;
     });
-    _validateName();
-    _validateEmail();
-    _validatePassword();
-    _validateConfirmPassword();
-    _validateAge();
+    _validateName(); _validateEmail(); _validatePassword();
+    _validateConfirmPassword(); _validateAge();
     if (!_isFormValid) return;
+
     final auth = context.read<AuthProvider>();
-    final ok = await auth.register(
-      _nameController.text,
-      _emailController.text,
-      _passwordController.text,
-      int.tryParse(_ageController.text) ?? 18,
-      _selectedGender,
+    // Paso 1: enviar código
+    final result = await auth.sendVerificationCode(
+      name: _nameController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
+      age: int.parse(_ageController.text),
+      gender: _selectedGender,
     );
-    if (ok && context.mounted) context.go('/home');
+
+    if (!context.mounted) return;
+
+    if (result['error'] != null) return; // auth.error ya tiene el mensaje
+
+    // Guardar datos y mostrar pantalla de código
+    _pendingRegistration = {
+      'name': _nameController.text,
+      'email': _emailController.text,
+      'password': _passwordController.text,
+      'age': int.parse(_ageController.text),
+      'gender': _selectedGender,
+    };
+
+    _showVerificationDialog();
+  }
+
+  void _showVerificationDialog() {
+  final codeController = TextEditingController();
+  final theme = Theme.of(context);
+
+  showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Verifica tu correo',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Enviamos un código de 6 dígitos a ${_pendingRegistration!['email']}',
+                style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: codeController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 28, letterSpacing: 12, fontWeight: FontWeight.bold),
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  hintText: '000000',
+                  counterText: '',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Consumer<AuthProvider>(
+                builder: (context, auth, _) {
+                  return Column(
+                    children: [
+                      if (auth.error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(auth.error!, style: const TextStyle(color: Colors.red)),
+                        ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: auth.isLoading
+                              ? null
+                              : () async {
+                                  final ok = await auth.register(
+                                    _pendingRegistration!['name'],
+                                    _pendingRegistration!['email'],
+                                    _pendingRegistration!['password'],
+                                    _pendingRegistration!['age'],
+                                    _pendingRegistration!['gender'],
+                                    code: codeController.text,
+                                  );
+                                  if (ok && context.mounted) {
+                                    Navigator.pop(context);
+                                    context.go('/home');
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: auth.isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text('Verificar y crear cuenta',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showTermsModal() {

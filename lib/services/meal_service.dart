@@ -5,7 +5,7 @@ import '../config/api_config.dart';
 class MealService {
   Future<List<dynamic>> getMealsByUser(int userId, String token) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/meals/user/$userId'),
+      Uri.parse('${ApiConfig.baseUrl}/meals/user'),
       headers: {'Authorization': 'Bearer $token'},
     );
     return jsonDecode(response.body);
@@ -13,7 +13,7 @@ class MealService {
 
   Future<List<dynamic>> getMealsByUserAndDate(int userId, String date, String token) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/meals/user/$userId/date?date=$date'),
+      Uri.parse('${ApiConfig.baseUrl}/meals/user/date?date=$date'),
       headers: {'Authorization': 'Bearer $token'},
     );
     return jsonDecode(response.body);

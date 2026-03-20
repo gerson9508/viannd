@@ -12,9 +12,45 @@ class AuthService {
     return jsonDecode(response.body);
   }
 
-  Future<Map<String, dynamic>> register(String name, String email, String password, int age, String gender) async {
+  Future<Map<String, dynamic>> register_(String name, String email, String password, int age, String gender) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+        'age': age,
+        'gender': gender,
+      }),
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> register(
+  String name, String email, String password, int age, String gender,
+    {required String code}
+  ) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name, 'email': email, 'password': password,
+        'age': age, 'gender': gender, 'code': code,
+      }),
+    );
+    return jsonDecode(response.body);
+  }
+
+  Future<Map<String, dynamic>> sendVerificationCode({
+    required String name,
+    required String email,
+    required String password,
+    required int age,
+    required String gender,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/send-code'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'name': name,

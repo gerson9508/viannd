@@ -14,7 +14,7 @@ class ReminderService {
   Future<List<dynamic>> getRemindersByUser(int userId, String token) async {
     final response = await http
         .get(
-          Uri.parse('${ApiConfig.baseUrl}/reminders/user/$userId'),
+          Uri.parse('${ApiConfig.baseUrl}/reminders/user'),
           headers: _headers(token),
         )
         .timeout(_timeout);

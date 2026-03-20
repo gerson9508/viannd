@@ -236,8 +236,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextButton(
                       onPressed: () {},
                       child: const Text(
-                        // '¿Olvidaste tu contraseña?',
-                         '',
+                         '¿Olvidaste tu contraseña?',
+                         //'//',
                         style: TextStyle(color: Color(0xFF4CAF50)),
                       ),
                     ),
@@ -245,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (auth.error != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
+                      child: Text(  
                         auth.error!,
                         style: const TextStyle(color: Colors.red),
                       ),
