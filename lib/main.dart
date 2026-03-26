@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'providers/auth_provider.dart';
+import 'providers/food_plan_provider.dart';
 import 'providers/meal_provider.dart';
 import 'providers/day_provider.dart';
 import 'providers/report_provider.dart';
@@ -13,6 +14,8 @@ import 'screens/home/home_screen.dart';
 import 'screens/meals/meals_screen.dart';
 import 'screens/meals/add_meal_screen.dart';
 import 'screens/days/history_screen.dart';
+import 'screens/profile/food_plan_form_screen.dart';
+import 'screens/profile/food_plan_view_screen.dart';
 import 'screens/reports/reports_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/reminders_screen.dart';
@@ -69,6 +72,19 @@ class _MyAppState extends State<MyApp> {
         GoRoute(path: '/profile',       builder: (_, __) => const ProfileScreen()),
         GoRoute(path: '/reminders',     builder: (_, __) => const RemindersScreen()),
         GoRoute(path: '/personal-data', builder: (_, __) => const PersonalDataScreen()),
+        GoRoute(
+          path: '/food-plan/create',
+          builder: (_, __) => const FoodPlanFormScreen(isEditing: false),
+        ),
+        GoRoute(
+          path: '/food-plan/view',
+          builder: (_, __) => const FoodPlanViewScreen(),
+        ),
+        GoRoute(
+          path: '/food-plan/edit',
+          builder: (_, __) => const FoodPlanFormScreen(isEditing: true),
+        ),
+
       ],
     );
   }
@@ -82,6 +98,8 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => MealProvider()),
         ChangeNotifierProvider(create: (_) => DayProvider()),
         ChangeNotifierProvider(create: (_) => ReportProvider()),
+        ChangeNotifierProvider(create: (_) => FoodPlanProvider()),
+
       ],
       child: _AppView(router: _router),
     );

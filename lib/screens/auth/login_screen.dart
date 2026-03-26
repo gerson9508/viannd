@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/food_plan_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -73,13 +74,22 @@ class _LoginScreenState extends State<LoginScreen> {
     _validateEmail();
     _validatePassword();
     if (!_isFormValid) return;
+
     final auth = context.read<AuthProvider>();
-    final ok = await auth.login(
-      _emailController.text,
-      _passwordController.text,
-    );
-    if (ok && context.mounted) context.go('/home');
+    final ok = await auth.login(_emailController.text, _passwordController.text);
+
+    if (ok && context.mounted) {
+      // Verificar si el usuario tiene plan alimenticio
+      await context.read<FoodPlanProvider>().loadPlan(auth.token!);
+      if (!context.mounted) return;
+      if (context.read<FoodPlanProvider>().hasPlan) {
+        context.go('/home');
+      } else {
+        context.go('/food-plan/create');
+      }
+    }
   }
+
 
   @override
   void dispose() {

@@ -240,7 +240,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   );
                                   if (ok && context.mounted) {
                                     Navigator.pop(context);
-                                    context.go('/home');
+                                    context.go('/food-plan/create');
                                   }
                                 },
                           style: ElevatedButton.styleFrom(

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/meal_provider.dart';
-import '../../providers/day_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/calorie_ring.dart';
