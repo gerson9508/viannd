@@ -25,13 +25,13 @@ class AuthProvider extends ChangeNotifier {
     final userId = prefs.getInt('userId');
     final userName = prefs.getString('userName');
     final userEmail = prefs.getString('userEmail');
-     final userDailyKcal = prefs.getInt('userDailyKcal'); 
+     final dailyKcal = prefs.getInt('dailyKcal'); 
     if (_token != null && userId != null) {
       _user = UserModel(
       id: userId,
       name: userName ?? '',
       email: userEmail ?? '',
-      dailyKcal: userDailyKcal ?? 1800, 
+      dailyKcal: dailyKcal ?? 1800, 
     );
     }
     notifyListeners();
@@ -66,12 +66,13 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
-    } catch (e) {
-      _error = 'Error de conexión';
+      } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
       _isLoading = false;
       notifyListeners();
       return false;
     }
+
   }
 
   // Future<bool> register_(String name, String email, String password, int age, String gender) async {
@@ -134,7 +135,7 @@ class AuthProvider extends ChangeNotifier {
         );
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('userName', name);
-        await prefs.setInt('userDailyKcal', kcal);
+        await prefs.setInt('dailyKcal', kcal);
         _isLoading = false;
         notifyListeners();
         return true;

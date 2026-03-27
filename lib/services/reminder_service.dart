@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../config/api_client.dart';
 
 class ReminderService {
   static const _timeout = Duration(seconds: 10);
@@ -18,7 +19,7 @@ class ReminderService {
           headers: _headers(token),
         )
         .timeout(_timeout);
-    return jsonDecode(response.body);
+    return ApiClient.parseList(response);
   }
 
   Future<Map<String, dynamic>> createReminder(
@@ -30,34 +31,47 @@ class ReminderService {
           body: jsonEncode(data),
         )
         .timeout(_timeout);
-    return jsonDecode(response.body);
+    return ApiClient.parseMap(response);
   }
 
   Future<void> toggleReminder(int id, String token) async {
-    await http
+    final response = await http
         .patch(
           Uri.parse('${ApiConfig.baseUrl}/reminders/$id/toggle'),
           headers: _headers(token),
         )
         .timeout(_timeout);
+    if (response.statusCode >= 400) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Error al cambiar recordatorio');
+    }
   }
 
   Future<void> updateReminderTime(int id, String time, String token) async {
-    await http
+    final response = await http
         .patch(
           Uri.parse('${ApiConfig.baseUrl}/reminders/$id/toggle'),
           headers: _headers(token, json: true),
           body: jsonEncode({'time': time}),
         )
         .timeout(_timeout);
+    if (response.statusCode >= 400) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Error al actualizar recordatorio');
+    }
   }
 
+
   Future<void> deleteReminder(int id, String token) async {
-    await http
+    final response = await http
         .delete(
           Uri.parse('${ApiConfig.baseUrl}/reminders/$id'),
           headers: _headers(token),
         )
         .timeout(_timeout);
+    if (response.statusCode >= 400) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['message'] ?? 'Error al eliminar recordatorio');
+    }
   }
 }

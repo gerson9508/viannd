@@ -60,7 +60,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _validateName() {
     final value = _nameController.text.trim();
-    final nameRegex = RegExp(r'^[a-zA-Z]+( [a-zA-Z]+)*$');
+    final nameRegex = RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]+( [a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]+)*$');
+
     setState(() {
       if (value.isEmpty) {
         _nameError = 'El nombre es obligatorio';
@@ -124,8 +125,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       if (value.isEmpty) {
         _ageError = 'La edad es obligatoria';
-      } else if (age == null || age < 1 || age > 120) {
-        _ageError = 'Ingresa una edad válida (1-120)';
+      } else if (age == null || age < 18 || age > 120) {
+        _ageError = 'Ingresa una edad válida (18-120)';
       } else {
         _ageError = null;
       }
@@ -329,26 +330,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _termSection(
                       theme,
                       '3. Privacidad y datos personales',
-                      'Recopilamos y procesamos tus datos personales conforme a nuestra Política de Privacidad. Al registrarte, consientes el tratamiento de tus datos para los fines descritos en dicha política.',
+                      'Recopilamos y procesamos tus datos personales, incluyendo información de salud como edad, género y hábitos alimenticios, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) y su Reglamento. Al registrarte, otorgas tu consentimiento expreso para el tratamiento de dichos datos con la finalidad de brindarte las funcionalidades de seguimiento nutricional. Puedes ejercer tus derechos ARCO (Acceso, Rectificación, Cancelación y Oposición) contactándonos en soporte@viannd.com.',
                     ),
                     _termSection(
                       theme,
-                      '4. Responsabilidad',
-                      'La información nutricional proporcionada por Viannd es de carácter orientativo y no sustituye el consejo de un profesional de la salud. No nos hacemos responsables de decisiones tomadas en base al contenido de la app.',
+                      '4. Responsabilidad y límites del servicio',
+                      'Viannd es una herramienta de seguimiento nutricional personal. La aplicación no genera dietas ni planes de alimentación médicos, y no sustituye en ningún caso la orientación de un nutriólogo, médico u otro profesional de la salud. Viannd permite al usuario definir sus propias reglas alimenticias y dar seguimiento a su cumplimiento, siendo el usuario el único responsable de las decisiones que tome con base en dicha información. Ante cualquier duda sobre tu salud, consulta a un profesional certificado.',
                     ),
                     _termSection(
                       theme,
-                      '5. Cuenta de usuario',
+                      '5. Naturaleza del proyecto y vigencia',
+                      'Viannd es un proyecto de desarrollo escolar con fines académicos y de investigación. La aplicación estará disponible únicamente durante el periodo de recopilación de datos establecido para dicho proyecto, tras el cual será descontinuada y los datos recopilados serán eliminados o anonimizados conforme a lo establecido en la LFPDPPP. El uso de la aplicación implica la aceptación de esta condición.',
+                    ),
+                    _termSection(
+                      theme,
+                      '6. Cuenta de usuario',
                       'Eres responsable de mantener la confidencialidad de tu contraseña y de todas las actividades que ocurran bajo tu cuenta. Notifícanos inmediatamente ante cualquier uso no autorizado.',
                     ),
                     _termSection(
                       theme,
-                      '6. Modificaciones',
+                      '7. Modificaciones',
                       'Nos reservamos el derecho de modificar estos términos en cualquier momento. Las modificaciones entrarán en vigor al publicarse en la aplicación. El uso continuado del servicio implica la aceptación de los nuevos términos.',
                     ),
                     _termSection(
                       theme,
-                      '7. Contacto',
+                      '8. Contacto',
                       'Si tienes preguntas sobre estos Términos y Condiciones, puedes contactarnos en soporte@viannd.com.',
                     ),
                     const SizedBox(height: 8),

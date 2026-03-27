@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../config/api_client.dart';
 
 class AuthService {
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -9,22 +10,7 @@ class AuthService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
-    return jsonDecode(response.body);
-  }
-
-  Future<Map<String, dynamic>> register_(String name, String email, String password, int age, String gender) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/auth/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'name': name,
-        'email': email,
-        'password': password,
-        'age': age,
-        'gender': gender,
-      }),
-    );
-    return jsonDecode(response.body);
+    return ApiClient.parseMap(response);
   }
 
   Future<Map<String, dynamic>> register(
@@ -39,7 +25,7 @@ class AuthService {
         'age': age, 'gender': gender, 'code': code,
       }),
     );
-    return jsonDecode(response.body);
+    return ApiClient.parseMap(response);
   }
 
   Future<Map<String, dynamic>> sendVerificationCode({
@@ -60,6 +46,6 @@ class AuthService {
         'gender': gender,
       }),
     );
-    return jsonDecode(response.body);
+    return ApiClient.parseMap(response);
   }
 }
